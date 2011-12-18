@@ -2,10 +2,10 @@ Motion JPEG Package for Go
 ==========================
 
 Install & Usage
-===============
+---------------
 
-$ goinstall github.com/marpie/go-mjpeg
+`$ goinstall github.com/marpie/go-mjpeg`
 
 Usage:
-  import mjpeg "github.com/marpie/go-mjpeg"
+  `import mjpeg "github.com/marpie/go-mjpeg"`
 
