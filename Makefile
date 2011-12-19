@@ -1,7 +1,7 @@
 include $(GOROOT)/src/Make.inc
 
 TARG=github.com/marpie/go-mjpeg
-GOFMT=gofmt -spaces=true -tabindent=false -tabwidth=4
+GOFMT=gofmt -tabs=false -tabwidth=4
 
 GOFILES=\
 	mjpeg.go\
