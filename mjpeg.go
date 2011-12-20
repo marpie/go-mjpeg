@@ -1,13 +1,12 @@
 package mjpeg
 
 import (
-    "bufio"
+    "bytes"
     "image"
     "image/jpeg"
     "io"
     "strconv"
     "strings"
-    "bytes"
 )
 
 type header struct {
@@ -17,68 +16,98 @@ type header struct {
     content_length int
 }
 
-func readHeader(inReader io.Reader) (h *header, ok bool) {
-    var err error
-    h = new(header)
-    r := bufio.NewReader(inReader)
+type ErrorString string
 
-    h.boundary, err = r.ReadString('\n')
-    if err != nil || h.boundary[0] != '-' || h.boundary[1] != '-' {
-        return nil, false
-    }
-    h.boundary = strings.TrimSpace(h.boundary)
+func (e ErrorString) Error() string { return string(e) }
+func NewError(s string) error       { return ErrorString(s) }
 
+func readString(inReader io.Reader, delim byte) (string, error) {
+    var b = make([]byte, 1)
+    buffer := bytes.NewBuffer(nil)
     for {
-        kv_str, err := r.ReadString('\n')
-        if err != nil || len(kv_str) == 0 {
-            break
+        n, err := inReader.Read(b)
+        if err != nil || n < 1 {
+            return "", err
         }
-
-        kv := strings.SplitN(kv_str, ":", 2)
-        if len(kv) != 2 {
-            break
-        }
-        value := strings.TrimSpace(kv[1])
-        switch kv[0] {
-        case "Motion-Event":
-            h.motion_event, _ = strconv.Atoi(value)
-        case "Content-Type":
-            h.content_type = value
-        case "Content-Length":
-            h.content_length, _ = strconv.Atoi(value)
+        if b[0] == delim {
+            return strings.TrimSpace(buffer.String()), nil
+        } else {
+            buffer.Write(b)
         }
     }
-    return h, true
+    return "", NewError("Unknown error")
 }
 
-func Decode(r io.Reader) (img *image.Image, out_ok bool) {
-
-    // read header
-    h, ok := readHeader(r)
-    if !ok || h.content_length < 1 {
-      return nil, false
-    }
-
-    var err error
-    var n int
-    raw := make([]byte, h.content_length)
-    n, err = r.Read(raw)
-    if (err != nil) || (n != h.content_length) {
-      return nil, false
-    }
-
-    // read image content
-    raw_r := bytes.NewBuffer(raw)
-    switch h.content_type {
-      case "image/jpeg":
-        jpg, err := jpeg.Decode(raw_r)
-        if err != nil {
-          return nil, false
+func readHeader(inReader io.Reader) (h *header, out_err error) {
+    // search for boundary
+    data := make([]byte, 2)
+    for {
+        n, err := inReader.Read(data)
+        if err != nil || n < 2 {
+            return nil, err
         }
-        return &jpg, true
-      default:
-        return nil, false
+
+        if data[0] == '-' && data[1] == '-' {
+            break
+        }
     }
 
-    return nil, false
+    // populate header
+    h = new(header)
+    h.boundary, out_err = readString(inReader, '\n')
+    if out_err != nil {
+        return nil, out_err
+    }
+
+    for {
+        line, err := readString(inReader, '\n')
+        if err != nil {
+            return nil, err
+        }
+
+        if line == "" {
+            break
+        }
+
+        kv := strings.Split(line, ": ")
+        if len(kv) != 2 {
+            return nil, NewError("Not a valid key/value pair.")
+        }
+
+        switch kv[0] {
+        case "Motion-Event":
+            h.motion_event, out_err = strconv.Atoi(kv[1])
+            if out_err != nil {
+                return nil, out_err
+            }
+        case "Content-Type":
+            h.content_type = kv[1]
+        case "Content-Length":
+            h.content_length, out_err = strconv.Atoi(kv[1])
+            if out_err != nil {
+                return nil, out_err
+            }
+        }
+
+    }
+    return h, nil
+}
+
+func Decode(inReader io.Reader) (img *image.Image, out_err error) {
+    // read header
+    h, out_err := readHeader(inReader)
+    if out_err != nil || h.content_length < 1 {
+        return nil, NewError("Invalid header data.")
+    }
+
+    switch h.content_type {
+    case "image/jpeg":
+        jpg, out_err := jpeg.Decode(inReader)
+        if out_err != nil {
+            return nil, out_err
+        }
+        return &jpg, nil
+    }
+
+    return nil, NewError("Unknown error")
 }
