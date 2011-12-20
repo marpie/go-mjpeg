@@ -7,6 +7,7 @@ import (
     "io"
     "strconv"
     "strings"
+    "bytes"
 )
 
 type header struct {
@@ -51,16 +52,30 @@ func readHeader(inReader io.Reader) (h *header, ok bool) {
 }
 
 func Decode(r io.Reader) (img *image.Image, out_ok bool) {
+
     // read header
     h, ok := readHeader(r)
     if !ok || h.content_length < 1 {
       return nil, false
     }
 
+    var err error
+    var n int
+    raw := make([]byte, h.content_length)
+    n, err = r.Read(raw)
+    if (err != nil) || (n != h.content_length) {
+      return nil, false
+    }
+
     // read image content
+    raw_r := bytes.NewBuffer(raw)
     switch h.content_type {
       case "image/jpeg":
-        img, err 
+        jpg, err := jpeg.Decode(raw_r)
+        if err != nil {
+          return nil, false
+        }
+        return &jpg, true
       default:
         return nil, false
     }
