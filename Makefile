@@ -11,3 +11,4 @@ include $(GOROOT)/src/Make.pkg
 format:
 	${GOFMT} -w mjpeg.go
 	${GOFMT} -w mjpeg_test.go
+	${GOFMT} -w demo.go

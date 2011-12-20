@@ -8,10 +8,7 @@ import (
     "testing"
 )
 
-const (
-    testfile   = "./testdata/video.mjpg"
-    outputTest = "/home/go/GoVM/test%d.jpg"
-)
+const testfile = "./testdata/video.mjpg"
 
 var sampleData *bytes.Buffer
 
