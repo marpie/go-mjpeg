@@ -1,4 +1,8 @@
 *.bak
+*.out
 *.6
-.*\.sw[a-z]
+*.swp
 _obj/
+_test/
+_testmain.go
+*.prof

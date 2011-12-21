@@ -2,6 +2,7 @@ package mjpeg
 
 import (
     "bytes"
+    "fmt"
     "image"
     "image/jpeg"
     "io"
@@ -43,8 +44,13 @@ func readHeader(inReader io.Reader) (h *header, out_err error) {
     data := make([]byte, 2)
     for {
         n, err := inReader.Read(data)
-        if err != nil || n < 2 {
+        switch {
+        case err != nil:
             return nil, err
+        case n == 1 && ((data[0] == 0x0A) || (data[0] == 0x0D)):
+            continue
+        case n < 2:
+            return nil, NewError(fmt.Sprintf("Not enough data available (2 needed - got %v: %X).", n, data[0]))
         }
 
         if data[0] == '-' && data[1] == '-' {
@@ -96,8 +102,8 @@ func readHeader(inReader io.Reader) (h *header, out_err error) {
 func Decode(inReader io.Reader) (img *image.Image, out_err error) {
     // read header
     h, out_err := readHeader(inReader)
-    if out_err != nil || h.content_length < 1 {
-        return nil, NewError("Invalid header data.")
+    if out_err != nil { //|| h.content_length < 1 {
+        return nil, out_err
     }
 
     switch h.content_type {

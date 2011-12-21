@@ -5,10 +5,16 @@ import (
     "bytes"
     "io"
     "os"
+    "runtime/pprof"
     "testing"
 )
 
-const testfile = "./testdata/video.mjpg"
+const (
+    testfile        = "./testdata/video.mjpg"
+    useProfiling    = true
+    profilingCpu    = "./profile_cpu.prof"
+    profilingMemory = "./profile_mem.prof"
+)
 
 var sampleData *bytes.Buffer
 
@@ -24,6 +30,22 @@ func setup() bool {
     }
     sampleData = bytes.NewBuffer(slice)
     return sampleData != nil
+}
+
+func startProfiling() {
+    if !useProfiling {
+        return
+    }
+
+    f, _ := os.Create(profilingCpu)
+    pprof.StartCPUProfile(f)
+}
+
+func stopProfiling() {
+    if !useProfiling {
+        return
+    }
+    pprof.StopCPUProfile()
 }
 
 func TestReadHeader(t *testing.T) {
@@ -47,6 +69,8 @@ func TestReadHeader(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
+    startProfiling()
+    defer stopProfiling()
     if !setup() {
         t.Error("setup() failed.")
     }
