@@ -10,7 +10,7 @@ Usage:
   `import mjpeg "github.com/marpie/go-mjpeg"`
 
 Sample:
-``
+`
 package main
 
 import (
@@ -74,5 +74,5 @@ func main() {
     go processHttp(response, nextImg, quit)
     time.Sleep(20 * time.Second)
 }
-``
+`
 
