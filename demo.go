@@ -1,3 +1,8 @@
+// Copyright 2011 marpie. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// This demo program shows a basic example of the MJPEG library.
 package main
 
 import (
@@ -9,8 +14,10 @@ import (
     "time"
 )
 
-const URL = "http://user:user@10.10.10.50/mjpg/video.mjpg"
+const URL = "http://user:user@localhost:5050/mjpg/video.mjpg"
 
+// processHttp receives the HTTP data and tries to decodes images. The images 
+// are sent through a chan for further processing.
 func processHttp(response *http.Response, nextImg chan *image.Image, quit chan bool) {
     defer response.Body.Close()
     for {
@@ -34,6 +41,7 @@ func processHttp(response *http.Response, nextImg chan *image.Image, quit chan b
     }
 }
 
+// processImage receives images through a chan and prints the dimensions.
 func processImage(nextImg chan *image.Image, quit chan bool) {
     for i := 0; i < 10; i++ {
         i, ok := <-nextImg
@@ -44,7 +52,7 @@ func processImage(nextImg chan *image.Image, quit chan bool) {
         if *i == nil {
             continue
         }
-        fmt.Println("New Image:", img.ColorModel())
+        fmt.Println("New Image:", img.Bounds())
     }
     quit <- true
 }

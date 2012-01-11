@@ -1,7 +1,14 @@
+// Copyright 2011 marpie. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package mjpeg implements the Motion JPEG format of the EDIMAX webcam.
+// It may be compatible with other MJPEG implementations.
 package mjpeg
 
 import (
     "bytes"
+    "errors"
     "fmt"
     "image"
     "image/jpeg"
@@ -10,6 +17,7 @@ import (
     "strings"
 )
 
+// header contains the fields that preceed a given image.
 type header struct {
     boundary       string
     motion_event   int
@@ -17,11 +25,8 @@ type header struct {
     content_length int
 }
 
-type ErrorString string
-
-func (e ErrorString) Error() string { return string(e) }
-func NewError(s string) error       { return ErrorString(s) }
-
+// readString tries to read a string until delim is found. The delim byte 
+// won't be returned.
 func readString(inReader io.Reader, delim byte) (string, error) {
     var b = make([]byte, 1)
     buffer := bytes.NewBuffer(nil)
@@ -36,9 +41,10 @@ func readString(inReader io.Reader, delim byte) (string, error) {
             buffer.Write(b)
         }
     }
-    return "", NewError("Unknown error")
+    return "", errors.New("Unknown error")
 }
 
+// readHeader is used to find and return a correct MJPEG header.
 func readHeader(inReader io.Reader) (h *header, out_err error) {
     // search for boundary
     data := make([]byte, 2)
@@ -50,7 +56,7 @@ func readHeader(inReader io.Reader) (h *header, out_err error) {
         case n == 1 && ((data[0] == 0x0A) || (data[0] == 0x0D)):
             continue
         case n < 2:
-            return nil, NewError(fmt.Sprintf("Not enough data available (2 needed - got %v: %X).", n, data[0]))
+            return nil, fmt.Errorf("Not enough data available (2 needed - got %v: %X).", n, data[0])
         }
 
         if data[0] == '-' && data[1] == '-' {
@@ -77,7 +83,7 @@ func readHeader(inReader io.Reader) (h *header, out_err error) {
 
         kv := strings.Split(line, ": ")
         if len(kv) != 2 {
-            return nil, NewError("Not a valid key/value pair.")
+            return nil, errors.New("Not a valid key/value pair.")
         }
 
         switch kv[0] {
@@ -99,10 +105,11 @@ func readHeader(inReader io.Reader) (h *header, out_err error) {
     return h, nil
 }
 
+// Decode returns the next Image found in the MJPEG stream.
 func Decode(inReader io.Reader) (img *image.Image, out_err error) {
     // read header
     h, out_err := readHeader(inReader)
-    if out_err != nil { //|| h.content_length < 1 {
+    if out_err != nil {
         return nil, out_err
     }
 
@@ -115,5 +122,5 @@ func Decode(inReader io.Reader) (img *image.Image, out_err error) {
         return &jpg, nil
     }
 
-    return nil, NewError("Unknown error")
+    return nil, errors.New("Unknown error")
 }

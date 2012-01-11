@@ -1,3 +1,6 @@
+// Copyright 2011 marpie. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 package mjpeg
 
 import (
@@ -58,13 +61,13 @@ func TestReadHeader(t *testing.T) {
     case err != nil:
         t.Errorf("readHeader error: %v", err)
     case h.boundary != "myboundary":
-        t.Errorf("boundary mismatch: '%v'", h.boundary)
+        t.Errorf("boundary mismatch: '%v' != 'myboundary'", h.boundary)
     case h.motion_event != 1:
-        t.Errorf("motion_event mismatch: '%v'", h.motion_event)
+        t.Errorf("motion_event mismatch: '%v' != '1'", h.motion_event)
     case h.content_type != "image/jpeg":
-        t.Errorf("content_type mismatch: '%v'", h.content_type)
+        t.Errorf("content_type mismatch: '%v' != 'image/jpeg'", h.content_type)
     case h.content_length != 14724:
-        t.Errorf("content_length mismatch: '%v'", h.content_length)
+        t.Errorf("content_length mismatch: '%v' != '14724'", h.content_length)
     }
 }
 
