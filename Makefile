@@ -9,6 +9,6 @@ GOFILES=\
 include $(GOROOT)/src/Make.pkg
 
 format:
-	${GOFMT} -w mjpeg.go
+	${GOFMT} -w ${GOFILES}
 	${GOFMT} -w mjpeg_test.go
-	${GOFMT} -w demo.go
+	${GOFMT} -w demo/demo.go
