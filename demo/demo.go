@@ -7,7 +7,7 @@ package main
 
 import (
 	"fmt"
-	mjpeg "go-mjpeg"
+	mjpeg "github.com/marpie/go-mjpeg"
 	"image"
 	"io"
 	"net/http"
